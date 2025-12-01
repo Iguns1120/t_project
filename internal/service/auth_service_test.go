@@ -51,7 +51,7 @@ func TestAuthService_Login(t *testing.T) {
 				m.On("GetPlayerByUsername", mock.Anything, "nonexistent").Return(nil, nil)
 			},
 			expectedToken: "",
-			expectedError: "invalid credentials",
+			expectedError: "憑證無效",
 		},
 		{
 			name: "WrongPassword",
@@ -67,7 +67,7 @@ func TestAuthService_Login(t *testing.T) {
 				}, nil)
 			},
 			expectedToken: "",
-			expectedError: "invalid credentials",
+			expectedError: "憑證無效",
 		},
 		{
 			name: "RepositoryError",
@@ -79,7 +79,7 @@ func TestAuthService_Login(t *testing.T) {
 				m.On("GetPlayerByUsername", mock.Anything, "testuser").Return(nil, errors.New("db error"))
 			},
 			expectedToken: "",
-			expectedError: "authentication failed: db error",
+			expectedError: "認證失敗: db error",
 		},
 	}
 

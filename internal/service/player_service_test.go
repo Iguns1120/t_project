@@ -49,7 +49,7 @@ func TestPlayerService_GetPlayerInfo(t *testing.T) {
 				m.On("GetPlayerByID", mock.Anything, uint(2)).Return(nil, nil)
 			},
 			expectedPlayer: nil,
-			expectedError:  "player not found",
+			expectedError:  "玩家不存在",
 		},
 		{
 			name:     "RepositoryError",
@@ -58,7 +58,7 @@ func TestPlayerService_GetPlayerInfo(t *testing.T) {
 				m.On("GetPlayerByID", mock.Anything, uint(3)).Return(nil, errors.New("db error"))
 			},
 			expectedPlayer: nil,
-			expectedError:  "failed to retrieve player information: db error",
+			expectedError:  "檢索玩家資訊失敗: db error",
 		},
 	}
 
