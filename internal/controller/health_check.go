@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,30 +19,44 @@ import (
 
 // HealthCheckResponse defines the structure for health check API response.
 type HealthCheckResponse struct {
-	Status     string                  `json:"status" example:"UP"`
+	Status     string                     `json:"status" example:"UP"`
+	Uptime     string                     `json:"uptime" example:"1h2m3s"`
+	System     SystemMetrics              `json:"system"`
 	Components map[string]ComponentStatus `json:"components"`
+}
+
+// SystemMetrics holds runtime metrics.
+type SystemMetrics struct {
+	Goroutines int    `json:"goroutines" example:"12"`
+	Memory     string `json:"memory_usage" example:"5 MB"`
+	GoVersion  string `json:"go_version" example:"go1.23.0"`
 }
 
 // ComponentStatus defines the status of an individual component.
 type ComponentStatus struct {
 	Status  string `json:"status" example:"UP"`
 	Latency string `json:"latency,omitempty" example:"5ms"`
+	Details string `json:"details,omitempty"` // Extra info (e.g., item count, db stats)
 	Message string `json:"message,omitempty"`
 }
 
 // HealthCheckController handles health check requests.
 type HealthCheckController struct {
-	cfg *configs.Config
+	cfg       *configs.Config
+	startTime time.Time
 }
 
 // NewHealthCheckController creates a new HealthCheckController.
 func NewHealthCheckController(cfg *configs.Config) *HealthCheckController {
-	return &HealthCheckController{cfg: cfg}
+	return &HealthCheckController{
+		cfg:       cfg,
+		startTime: time.Now(),
+	}
 }
 
 // Check handles GET /health requests.
 // @Summary 健康檢查
-// @Description 檢查服務及其依賴組件的健康狀態
+// @Description 檢查服務運行狀態、系統指標及依賴組件健康狀況
 // @Tags System
 // @Produce json
 // @Success 200 {object} HealthCheckResponse "服務正常"
@@ -54,21 +69,31 @@ func (ctrl *HealthCheckController) Check(c *gin.Context) {
 	overallStatus := "UP"
 	components := make(map[string]ComponentStatus)
 
-	// Check TiDB
+	// 1. System Metrics (Always relevant)
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	systemMetrics := SystemMetrics{
+		Goroutines: runtime.NumGoroutine(),
+		Memory:     fmt.Sprintf("%v MB", m.Alloc/1024/1024),
+		GoVersion:  runtime.Version(),
+	}
+
+	// 2. Persistence Checks (Based on Config)
 	if ctrl.cfg.Persistence.Type == "memory" {
-		components["tidb"] = ComponentStatus{Status: "DISABLED", Message: "Running in memory mode"}
+		// Memory Mode Check
+		components["memory_store"] = ComponentStatus{
+			Status:  "UP",
+			Details: "In-Memory persistence enabled",
+		}
 	} else {
+		// MySQL Mode Check
 		dbStatus := ctrl.checkTiDB(ctx, log)
 		components["tidb"] = dbStatus
 		if dbStatus.Status != "UP" {
 			overallStatus = "DEGRADED"
 		}
-	}
 
-	// Check Redis
-	if ctrl.cfg.Persistence.Type == "memory" {
-		components["redis"] = ComponentStatus{Status: "DISABLED", Message: "Running in memory mode"}
-	} else {
+		// Redis Check
 		redisStatus := ctrl.checkRedis(ctx, log)
 		components["redis"] = redisStatus
 		if redisStatus.Status != "UP" {
@@ -76,28 +101,27 @@ func (ctrl *HealthCheckController) Check(c *gin.Context) {
 		}
 	}
 
-	// Check RocketMQ Producer
-	mqStatus := ctrl.checkRocketMQProducer(ctx, log)
-	components["rocketmq"] = mqStatus
-	// Only affect overall status if it's DOWN (not DISABLED)
-	if mqStatus.Status == "DOWN" {
-		overallStatus = "DEGRADED"
+	// 3. RocketMQ Check (Only if actually initialized)
+	if rocketmq.ProducerClient != nil && rocketmq.ProducerClient.Started() {
+		mqStatus := ComponentStatus{Status: "UP"}
+		components["rocketmq"] = mqStatus
 	}
 
 	httpStatus := http.StatusOK
 	if overallStatus != "UP" {
-		httpStatus = http.StatusServiceUnavailable // 503 Service Unavailable
+		httpStatus = http.StatusServiceUnavailable
 	}
 
 	c.JSON(httpStatus, HealthCheckResponse{
 		Status:     overallStatus,
+		Uptime:     time.Since(ctrl.startTime).String(),
+		System:     systemMetrics,
 		Components: components,
 	})
 }
 
 func (ctrl *HealthCheckController) checkTiDB(ctx context.Context, log *zap.Logger) ComponentStatus {
 	start := time.Now()
-	// Guard against nil DB
 	gormDB := database.GetDB()
 	if gormDB == nil {
 		return ComponentStatus{Status: "DOWN", Message: "Database client not initialized"}
@@ -149,17 +173,4 @@ func (ctrl *HealthCheckController) checkRedis(ctx context.Context, log *zap.Logg
 	}
 
 	return ComponentStatus{Status: status, Latency: latency.String(), Message: message}
-}
-
-func (ctrl *HealthCheckController) checkRocketMQProducer(ctx context.Context, log *zap.Logger) ComponentStatus {
-	// For template, RocketMQ is optional.
-	if rocketmq.ProducerClient == nil {
-		return ComponentStatus{Status: "DISABLED", Message: "RocketMQ not initialized"}
-	}
-
-	if !rocketmq.ProducerClient.Started() {
-		return ComponentStatus{Status: "DOWN", Message: "RocketMQ Producer stopped"}
-	}
-	
-	return ComponentStatus{Status: "UP"}
 }

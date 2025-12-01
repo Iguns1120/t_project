@@ -139,7 +139,7 @@ const docTemplate = `{
         },
         "/health": {
             "get": {
-                "description": "檢查服務及其依賴組件的健康狀態",
+                "description": "檢查服務運行狀態、系統指標及依賴組件健康狀況",
                 "produces": [
                     "application/json"
                 ],
@@ -168,6 +168,10 @@ const docTemplate = `{
         "internal_controller.ComponentStatus": {
             "type": "object",
             "properties": {
+                "details": {
+                    "description": "Extra info (e.g., item count, db stats)",
+                    "type": "string"
+                },
                 "latency": {
                     "type": "string",
                     "example": "5ms"
@@ -193,6 +197,30 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "UP"
+                },
+                "system": {
+                    "$ref": "#/definitions/internal_controller.SystemMetrics"
+                },
+                "uptime": {
+                    "type": "string",
+                    "example": "1h2m3s"
+                }
+            }
+        },
+        "internal_controller.SystemMetrics": {
+            "type": "object",
+            "properties": {
+                "go_version": {
+                    "type": "string",
+                    "example": "go1.23.0"
+                },
+                "goroutines": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "memory_usage": {
+                    "type": "string",
+                    "example": "5 MB"
                 }
             }
         },

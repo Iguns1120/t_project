@@ -2,6 +2,9 @@ basePath: /
 definitions:
   internal_controller.ComponentStatus:
     properties:
+      details:
+        description: Extra info (e.g., item count, db stats)
+        type: string
       latency:
         example: 5ms
         type: string
@@ -19,6 +22,23 @@ definitions:
         type: object
       status:
         example: UP
+        type: string
+      system:
+        $ref: '#/definitions/internal_controller.SystemMetrics'
+      uptime:
+        example: 1h2m3s
+        type: string
+    type: object
+  internal_controller.SystemMetrics:
+    properties:
+      go_version:
+        example: go1.23.0
+        type: string
+      goroutines:
+        example: 12
+        type: integer
+      memory_usage:
+        example: 5 MB
         type: string
     type: object
   microservice-mvp_internal_model.LoginRequest:
@@ -178,7 +198,7 @@ paths:
       - Player
   /health:
     get:
-      description: 檢查服務及其依賴組件的健康狀態
+      description: 檢查服務運行狀態、系統指標及依賴組件健康狀況
       produces:
       - application/json
       responses:
