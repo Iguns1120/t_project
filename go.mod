@@ -1,6 +1,6 @@
 module microservice-mvp
 
-go 1.25.1
+go 1.24.0
 
 require (
 	github.com/apache/rocketmq-client-go/v2 v2.1.2
