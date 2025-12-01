@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  # 使用 MySQL 8 模擬 TiDB (協議兼容)，監聽 4000 埠
+  tidb:
+    image: mysql:8.0
+    container_name: microservice-tidb
+    ports:
+      - "4000:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: pass
+      MYSQL_DATABASE: test_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis:alpine
+    container_name: microservice-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  rmqnamesrv:
+    image: apache/rocketmq:latest
+    container_name: rmqnamesrv
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+
+  rmqbroker:
+    image: apache/rocketmq:latest
+    container_name: rmqbroker
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+    environment:
+      NAMESRV_ADDR: "rmqnamesrv:9876"
+    volumes:
+      - ./rocketmq/broker.conf:/opt/rocketmq-latest/conf/broker.conf
+    command: sh mqbroker -c /opt/rocketmq-latest/conf/broker.conf
+    depends_on:
+      - rmqnamesrv

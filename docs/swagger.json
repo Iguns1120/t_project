@@ -1,0 +1,301 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a lightweight Microservice Template suitable for quick start. It supports both In-Memory and MySQL modes.",
+        "title": "Microservice MVP API (Template)",
+        "contact": {
+            "name": "API Support"
+        },
+        "license": {
+            "name": "Apache 2.0"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/v1/login": {
+            "post": {
+                "description": "驗證玩家憑證並返回認證 token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "玩家登入",
+                "parameters": [
+                    {
+                        "description": "登入請求",
+                        "name": "loginRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/microservice-mvp_internal_model.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "登入成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/microservice-mvp_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/microservice-mvp_internal_model.LoginResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "請求參數錯誤",
+                        "schema": {
+                            "$ref": "#/definitions/microservice-mvp_pkg_response.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "認證失敗",
+                        "schema": {
+                            "$ref": "#/definitions/microservice-mvp_pkg_response.HTTPError401"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/players/{id}": {
+            "get": {
+                "description": "根據玩家 ID 取得玩家的詳細資料，包含餘額。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player"
+                ],
+                "summary": "取得玩家資料",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "玩家 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得玩家資料",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/microservice-mvp_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/microservice-mvp_internal_model.PlayerInfoResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "請求參數錯誤",
+                        "schema": {
+                            "$ref": "#/definitions/microservice-mvp_pkg_response.HTTPError400"
+                        }
+                    },
+                    "404": {
+                        "description": "玩家不存在",
+                        "schema": {
+                            "$ref": "#/definitions/microservice-mvp_pkg_response.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "內部伺服器錯誤",
+                        "schema": {
+                            "$ref": "#/definitions/microservice-mvp_pkg_response.HTTPError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "檢查服務及其依賴組件的健康狀態",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "健康檢查",
+                "responses": {
+                    "200": {
+                        "description": "服務正常",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller.HealthCheckResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "服務降級或異常",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller.HealthCheckResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "internal_controller.ComponentStatus": {
+            "type": "object",
+            "properties": {
+                "latency": {
+                    "type": "string",
+                    "example": "5ms"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "UP"
+                }
+            }
+        },
+        "internal_controller.HealthCheckResponse": {
+            "type": "object",
+            "properties": {
+                "components": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/internal_controller.ComponentStatus"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "UP"
+                }
+            }
+        },
+        "microservice-mvp_internal_model.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "microservice-mvp_internal_model.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "description": "Placeholder for JWT token",
+                    "type": "string"
+                }
+            }
+        },
+        "microservice-mvp_internal_model.PlayerInfoResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "microservice-mvp_pkg_response.HTTPError400": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 400
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Bad Request"
+                }
+            }
+        },
+        "microservice-mvp_pkg_response.HTTPError401": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 401
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Unauthorized"
+                }
+            }
+        },
+        "microservice-mvp_pkg_response.HTTPError404": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 404
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Not Found"
+                }
+            }
+        },
+        "microservice-mvp_pkg_response.HTTPError500": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 500
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Internal Server Error"
+                }
+            }
+        },
+        "microservice-mvp_pkg_response.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {},
+                "message": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        }
+    }
+}
