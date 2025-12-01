@@ -11,36 +11,36 @@ import (
 	"microservice-mvp/pkg/logger"
 )
 
-// PlayerService defines the interface for player information retrieval operations.
+// PlayerService 定義玩家資訊檢索操作的介面
 type PlayerService interface {
 	GetPlayerInfo(ctx context.Context, playerID uint) (*model.PlayerInfoResponse, error)
 }
 
-// playerService implements PlayerService.
+// playerService 實作 PlayerService
 type playerService struct {
 	playerRepo repository.PlayerRepository
 }
 
-// NewPlayerService creates a new PlayerService.
+// NewPlayerService 建立一個新的 PlayerService
 func NewPlayerService(playerRepo repository.PlayerRepository) PlayerService {
 	return &playerService{playerRepo: playerRepo}
 }
 
-// GetPlayerInfo retrieves player information by ID.
+// GetPlayerInfo 根據 ID 檢索玩家資訊
 func (s *playerService) GetPlayerInfo(ctx context.Context, playerID uint) (*model.PlayerInfoResponse, error) {
 	log := logger.FromContext(ctx)
 
 	player, err := s.playerRepo.GetPlayerByID(ctx, playerID)
 	if err != nil {
-		log.Error("Failed to get player info from repository", zap.Error(err), zap.Uint("playerID", playerID))
-		return nil, fmt.Errorf("failed to retrieve player information: %w", err)
+		log.Error("從 Repository 取得玩家資訊失敗", zap.Error(err), zap.Uint("playerID", playerID))
+		return nil, fmt.Errorf("檢索玩家資訊失敗: %w", err)
 	}
 	if player == nil {
-		log.Warn("Player not found", zap.Uint("playerID", playerID))
-		return nil, fmt.Errorf("player not found")
+		log.Warn("找不到玩家", zap.Uint("playerID", playerID))
+		return nil, fmt.Errorf("玩家不存在")
 	}
 
-	log.Info("Player information retrieved successfully", zap.Uint("playerID", playerID))
+	log.Info("成功取得玩家資訊", zap.Uint("playerID", playerID))
 	resp := player.ToPlayerInfoResponse()
 	return &resp, nil
 }

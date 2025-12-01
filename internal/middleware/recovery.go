@@ -10,17 +10,17 @@ import (
 	"go.uber.org/zap"
 )
 
-// Recovery recovers from any panics and writes a 500 error response.
+// Recovery 捕獲任何 panic 並寫入 500 錯誤回應
 func Recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				log := logger.FromContext(c.Request.Context())
-				log.Error("Panic recovered",
+				log.Error("捕獲 Panic",
 					zap.Any("error", err),
 					zap.String("stack", string(debug.Stack())),
 				)
-				response.FailWithMessage(c, http.StatusInternalServerError, "Internal Server Error")
+				response.FailWithMessage(c, http.StatusInternalServerError, "內部伺服器錯誤")
 				c.Abort()
 			}
 		}()

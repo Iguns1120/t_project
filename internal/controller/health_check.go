@@ -17,7 +17,7 @@ import (
 	"microservice-mvp/pkg/rocketmq"
 )
 
-// HealthCheckResponse defines the structure for health check API response.
+// HealthCheckResponse 定義健康檢查 API 的回應結構
 type HealthCheckResponse struct {
 	Status     string                     `json:"status" example:"UP"`
 	Uptime     string                     `json:"uptime" example:"1h2m3s"`
@@ -25,28 +25,28 @@ type HealthCheckResponse struct {
 	Components map[string]ComponentStatus `json:"components"`
 }
 
-// SystemMetrics holds runtime metrics.
+// SystemMetrics 保存運行時指標
 type SystemMetrics struct {
 	Goroutines int    `json:"goroutines" example:"12"`
 	Memory     string `json:"memory_usage" example:"5 MB"`
 	GoVersion  string `json:"go_version" example:"go1.23.0"`
 }
 
-// ComponentStatus defines the status of an individual component.
+// ComponentStatus 定義個別組件的狀態
 type ComponentStatus struct {
 	Status  string `json:"status" example:"UP"`
 	Latency string `json:"latency,omitempty" example:"5ms"`
-	Details string `json:"details,omitempty"` // Extra info (e.g., item count, db stats)
+	Details string `json:"details,omitempty"` // 額外資訊 (例如: 項目數量, DB 統計)
 	Message string `json:"message,omitempty"`
 }
 
-// HealthCheckController handles health check requests.
+// HealthCheckController 處理健康檢查請求
 type HealthCheckController struct {
 	cfg       *configs.Config
 	startTime time.Time
 }
 
-// NewHealthCheckController creates a new HealthCheckController.
+// NewHealthCheckController 建立一個新的 HealthCheckController
 func NewHealthCheckController(cfg *configs.Config) *HealthCheckController {
 	return &HealthCheckController{
 		cfg:       cfg,
@@ -54,7 +54,7 @@ func NewHealthCheckController(cfg *configs.Config) *HealthCheckController {
 	}
 }
 
-// Check handles GET /health requests.
+// Check 處理 GET /health 請求
 // @Summary 健康檢查
 // @Description 檢查服務運行狀態、系統指標及依賴組件健康狀況
 // @Tags System
@@ -69,7 +69,7 @@ func (ctrl *HealthCheckController) Check(c *gin.Context) {
 	overallStatus := "UP"
 	components := make(map[string]ComponentStatus)
 
-	// 1. System Metrics (Always relevant)
+	// 1. 系統指標 (始終相關)
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	systemMetrics := SystemMetrics{
@@ -78,22 +78,22 @@ func (ctrl *HealthCheckController) Check(c *gin.Context) {
 		GoVersion:  runtime.Version(),
 	}
 
-	// 2. Persistence Checks (Based on Config)
+	// 2. 持久化檢查 (基於配置)
 	if ctrl.cfg.Persistence.Type == "memory" {
-		// Memory Mode Check
+		// Memory 模式檢查
 		components["memory_store"] = ComponentStatus{
 			Status:  "UP",
-			Details: "In-Memory persistence enabled",
+			Details: "In-Memory 持久化已啟用",
 		}
 	} else {
-		// MySQL Mode Check
+		// MySQL 模式檢查
 		dbStatus := ctrl.checkTiDB(ctx, log)
 		components["tidb"] = dbStatus
 		if dbStatus.Status != "UP" {
 			overallStatus = "DEGRADED"
 		}
 
-		// Redis Check
+		// Redis 檢查
 		redisStatus := ctrl.checkRedis(ctx, log)
 		components["redis"] = redisStatus
 		if redisStatus.Status != "UP" {
@@ -101,7 +101,7 @@ func (ctrl *HealthCheckController) Check(c *gin.Context) {
 		}
 	}
 
-	// 3. RocketMQ Check (Only if actually initialized)
+	// 3. RocketMQ 檢查 (僅當實際初始化時)
 	if rocketmq.ProducerClient != nil && rocketmq.ProducerClient.Started() {
 		mqStatus := ComponentStatus{Status: "UP"}
 		components["rocketmq"] = mqStatus
@@ -124,13 +124,13 @@ func (ctrl *HealthCheckController) checkTiDB(ctx context.Context, log *zap.Logge
 	start := time.Now()
 	gormDB := database.GetDB()
 	if gormDB == nil {
-		return ComponentStatus{Status: "DOWN", Message: "Database client not initialized"}
+		return ComponentStatus{Status: "DOWN", Message: "資料庫客戶端未初始化"}
 	}
 
 	sqlDB, err := gormDB.DB()
 	if err != nil {
-		log.Error("Failed to get TiDB underlying DB for health check", zap.Error(err))
-		return ComponentStatus{Status: "DOWN", Message: "Failed to get DB connection pool"}
+		log.Error("無法獲取 TiDB 底層 DB 連線以進行健康檢查", zap.Error(err))
+		return ComponentStatus{Status: "DOWN", Message: "無法獲取 DB 連線池"}
 	}
 	err = sqlDB.PingContext(ctx)
 	latency := time.Since(start)
@@ -139,12 +139,12 @@ func (ctrl *HealthCheckController) checkTiDB(ctx context.Context, log *zap.Logge
 
 	if err != nil {
 		status = "DOWN"
-		message = fmt.Sprintf("Ping failed: %v", err)
-		log.Error("TiDB health check failed", zap.Error(err))
+		message = fmt.Sprintf("Ping 失敗: %v", err)
+		log.Error("TiDB 健康檢查失敗", zap.Error(err))
 	} else if latency > time.Duration(ctrl.cfg.HealthCheck.LatencyThreshold)*time.Millisecond {
 		status = "DEGRADED"
-		message = fmt.Sprintf("High latency: %s > %dms", latency, ctrl.cfg.HealthCheck.LatencyThreshold)
-		log.Warn("TiDB health check detected high latency", zap.Duration("latency", latency), zap.Int("threshold", ctrl.cfg.HealthCheck.LatencyThreshold))
+		message = fmt.Sprintf("高延遲: %s > %dms", latency, ctrl.cfg.HealthCheck.LatencyThreshold)
+		log.Warn("TiDB 健康檢查偵測到高延遲", zap.Duration("latency", latency), zap.Int("threshold", ctrl.cfg.HealthCheck.LatencyThreshold))
 	}
 
 	return ComponentStatus{Status: status, Latency: latency.String(), Message: message}
@@ -154,7 +154,7 @@ func (ctrl *HealthCheckController) checkRedis(ctx context.Context, log *zap.Logg
 	start := time.Now()
 	rdb := redis.GetClient()
 	if rdb == nil {
-		return ComponentStatus{Status: "DOWN", Message: "Redis client not initialized"}
+		return ComponentStatus{Status: "DOWN", Message: "Redis 客戶端未初始化"}
 	}
 
 	err := rdb.Ping(ctx).Err()
@@ -164,12 +164,12 @@ func (ctrl *HealthCheckController) checkRedis(ctx context.Context, log *zap.Logg
 
 	if err != nil {
 		status = "DOWN"
-		message = fmt.Sprintf("Ping failed: %v", err)
-		log.Error("Redis health check failed", zap.Error(err))
+		message = fmt.Sprintf("Ping 失敗: %v", err)
+		log.Error("Redis 健康檢查失敗", zap.Error(err))
 	} else if latency > time.Duration(ctrl.cfg.HealthCheck.LatencyThreshold)*time.Millisecond {
 		status = "DEGRADED"
-		message = fmt.Sprintf("High latency: %s > %dms", latency, ctrl.cfg.HealthCheck.LatencyThreshold)
-		log.Warn("Redis health check detected high latency", zap.Duration("latency", latency), zap.Int("threshold", ctrl.cfg.HealthCheck.LatencyThreshold))
+		message = fmt.Sprintf("高延遲: %s > %dms", latency, ctrl.cfg.HealthCheck.LatencyThreshold)
+		log.Warn("Redis 健康檢查偵測到高延遲", zap.Duration("latency", latency), zap.Int("threshold", ctrl.cfg.HealthCheck.LatencyThreshold))
 	}
 
 	return ComponentStatus{Status: status, Latency: latency.String(), Message: message}

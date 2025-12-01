@@ -9,20 +9,20 @@ import (
 	"microservice-mvp/pkg/logger"
 )
 
-// LoggerMiddleware is a Gin middleware for logging HTTP requests and handling latency warnings.
+// LoggerMiddleware 是 Gin 的中間件，用於記錄 HTTP 請求並處理延遲警告
 func LoggerMiddleware(cfg configs.ServerConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
 		raw := c.Request.URL.RawQuery
 
-		// Process request
+		// 處理請求
 		c.Next()
 
-		// Get logger with trace ID from context
+		// 從上下文中獲取帶有 TraceID 的 Logger
 		log := logger.FromContext(c.Request.Context())
 
-		// Log details after request is processed
+		// 請求處理完成後記錄詳細資訊
 		latency := time.Since(start)
 		clientIP := c.ClientIP()
 		method := c.Request.Method
@@ -41,22 +41,22 @@ func LoggerMiddleware(cfg configs.ServerConfig) gin.HandlerFunc {
 			zap.String("path", path),
 		}
 
-		// Log request context error (e.g., client disconnected, deadline exceeded)
+		// 記錄請求上下文錯誤（例如：客戶端斷線、逾時）
 		select {
 		case <-c.Request.Context().Done():
 			err := c.Request.Context().Err()
-			log.Error("Request context finished unexpectedly", zap.Error(err), zap.Any("context_error", err.Error()))
+			log.Error("請求上下文意外結束", zap.Error(err), zap.Any("context_error", err.Error()))
 			fields = append(fields, zap.Error(err))
 		default:
-			// No context error
+			// 無上下文錯誤
 		}
 
 		if errorMessage != "" {
 			log.Error(errorMessage, fields...)
 		} else if latency > time.Duration(cfg.SlowThreshold)*time.Millisecond {
-			log.Warn("Slow request", fields...)
+			log.Warn("慢請求", fields...)
 		} else {
-			log.Info("Request completed", fields...)
+			log.Info("請求完成", fields...)
 		}
 	}
 }

@@ -5,8 +5,8 @@ import (
 	"microservice-mvp/internal/model"
 )
 
-// PlayerRepository defines the interface for player data operations.
-// This interface allows for swapping different storage implementations (e.g., MySQL, In-Memory).
+// PlayerRepository 定義玩家資料操作的介面
+// 此介面允許切換不同的儲存實作（例如 MySQL, In-Memory）
 type PlayerRepository interface {
 	CreatePlayer(ctx context.Context, player *model.Player) error
 	GetPlayerByUsername(ctx context.Context, username string) (*model.Player, error)

@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Config represents the global configuration structure.
+// Config 代表全域配置結構
 type Config struct {
 	Server      ServerConfig      `mapstructure:"server"`
 	Logger      LoggerConfig      `mapstructure:"logger"`
@@ -18,8 +18,9 @@ type Config struct {
 	HealthCheck HealthCheckConfig `mapstructure:"health_check"`
 }
 
+// PersistenceConfig 代表持久化配置
 type PersistenceConfig struct {
-	Type string `mapstructure:"type"` // "memory" or "mysql"
+	Type string `mapstructure:"type"` // "memory" 或 "mysql"
 }
 
 type ServerConfig struct {
@@ -56,7 +57,7 @@ type HealthCheckConfig struct {
 	LatencyThreshold int `mapstructure:"latency_threshold"`
 }
 
-// LoadConfig loads configuration from file.
+// LoadConfig 從檔案載入配置
 func LoadConfig(path string) (*Config, error) {
 	viper.SetConfigFile(path)
 	viper.SetConfigType("yaml")
@@ -64,12 +65,12 @@ func LoadConfig(path string) (*Config, error) {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		return nil, fmt.Errorf("讀取配置檔失敗: %w", err)
 	}
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+		return nil, fmt.Errorf("解析配置失敗: %w", err)
 	}
 
 	return &config, nil

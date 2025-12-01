@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 		baseURL = url
 	}
 
-	// Wait for service to be ready
+	// 等待服務就緒
 	waitForService()
 
 	os.Exit(m.Run())
@@ -31,23 +31,23 @@ func waitForService() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	fmt.Println("Waiting for service at " + baseURL)
+	fmt.Println("正在等待服務於 " + baseURL)
 	for {
 		select {
 		case <-timeout:
-			fmt.Println("Timeout waiting for service to be ready")
-			os.Exit(1) // Exit if service is not ready
+			fmt.Println("等待服務就緒逾時")
+			os.Exit(1) // 如果服務未就緒則退出
 		case <-ticker.C:
 			resp, err := http.Get(baseURL + "/health")
 			if err == nil && resp.StatusCode == 200 {
 				resp.Body.Close()
-				fmt.Println("Service is ready!")
+				fmt.Println("服務已就緒!")
 				return
 			}
 			if err != nil {
-				fmt.Printf("Waiting for service: %v\n", err)
+				fmt.Printf("等待服務中: %v\n", err)
 			} else {
-				fmt.Printf("Waiting for service: status code %d\n", resp.StatusCode)
+				fmt.Printf("等待服務中: 狀態碼 %d\n", resp.StatusCode)
 				resp.Body.Close()
 			}
 		}
@@ -56,7 +56,7 @@ func waitForService() {
 
 func TestHealthCheck(t *testing.T) {
 	resp, err := http.Get(baseURL + "/health")
-	require.NoError(t, err, "Failed to connect to service")
+	require.NoError(t, err, "連線到服務失敗")
 	defer resp.Body.Close()
 	
 	assert.Equal(t, 200, resp.StatusCode)
@@ -75,9 +75,9 @@ type LoginResponse struct {
 	Msg string `json:"msg"`
 }
 
-// TestLogin attempts to login.
-// Note: This test depends on seeded data. 
-// For now, we just ensure the API is reachable and returns a valid HTTP response (even 401 is a valid API response compared to 500 or connection refused).
+// TestLogin 嘗試登入
+// 注意: 此測試依賴預先填充的數據 (Seeding)。
+// 目前，我們僅確保 API 可達並返回有效的 HTTP 回應 (即使是 401 也是相對於 500 或連線被拒的有效回應)。
 func TestLogin(t *testing.T) {
 	reqBody := LoginRequest{
 		Username: "testuser",
@@ -86,16 +86,16 @@ func TestLogin(t *testing.T) {
 	jsonBody, _ := json.Marshal(reqBody)
 
 	resp, err := http.Post(baseURL+"/api/v1/login", "application/json", bytes.NewBuffer(jsonBody))
-	require.NoError(t, err, "Failed to post to login endpoint")
+	require.NoError(t, err, "發送 POST 到登入端點失敗")
 	defer resp.Body.Close()
 
-	// We expect 200 if user exists, or 401 if not. But definitely not 500.
-	assert.NotEqual(t, 500, resp.StatusCode, "Internal Server Error is not expected")
+	// 如果使用者存在，我們預期 200；如果不存在，預期 401。但絕對不應是 500。
+	assert.NotEqual(t, 500, resp.StatusCode, "不預期出現內部伺服器錯誤")
 	
 	if resp.StatusCode == 200 {
 		var loginResp LoginResponse
 		err := json.NewDecoder(resp.Body).Decode(&loginResp)
 		assert.NoError(t, err)
-		assert.NotEmpty(t, loginResp.Data.Token, "Token should not be empty on success")
+		assert.NotEmpty(t, loginResp.Data.Token, "成功時 Token 不應為空")
 	}
 }

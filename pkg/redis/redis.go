@@ -10,45 +10,45 @@ import (
 	"microservice-mvp/pkg/logger"
 )
 
-// Client is the global Redis client instance
+// Client 是全域 Redis 客戶端實例
 var Client *redis.Client
 
-// InitRedis initializes the Redis client.
+// InitRedis 初始化 Redis 客戶端
 func InitRedis(cfg configs.RedisConfig) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Addr,
 		Password: cfg.Password,
 		DB:       cfg.DB,
-		PoolSize: 10, // Connection pool size
+		PoolSize: 10, // 連線池大小
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Ping the Redis server to check connection
+	// Ping Redis 伺服器以檢查連線
 	status := rdb.Ping(ctx)
 	if status.Err() != nil {
-		return nil, fmt.Errorf("failed to connect to Redis: %w", status.Err())
+		return nil, fmt.Errorf("連線到 Redis 失敗: %w", status.Err())
 	}
 
-	Client = rdb // Set global Redis client instance
-	logger.Logger.Info("Redis client initialized successfully")
+	Client = rdb // 設定全域 Redis 客戶端實例
+	logger.Logger.Info("Redis 客戶端初始化成功")
 	return rdb, nil
 }
 
-// GetClient returns the global Redis client instance.
+// GetClient 返回全域 Redis 客戶端實例
 func GetClient() *redis.Client {
 	return Client
 }
 
-// WithContext returns a Redis client that uses the provided context.
-// This allows Redis commands to be cancelled if the context is cancelled.
-// It also ensures that any logging from Redis operations can inherit traceID.
+// WithContext 返回一個使用提供的上下文的 Redis 客戶端
+// 這允許 Redis 命令在上下文被取消時取消
+// 它也確保任何來自 Redis 操作的日誌可以繼承 traceID
 func WithContext(ctx context.Context) *redis.Client {
 	if ctx == nil {
 		return Client
 	}
-	// go-redis client methods already accept a context, so we just return the client
-	// and rely on the calling code to pass the context to the method.
+	// go-redis 客戶端方法已經接受 context，所以我們只返回 client
+	// 並依賴呼叫程式碼將 context 傳遞給方法
 	return Client
 }

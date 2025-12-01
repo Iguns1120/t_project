@@ -9,21 +9,21 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"microservice-mvp/pkg/configs"
-	pkgLogger "microservice-mvp/pkg/logger" // Alias to avoid conflict with gorm.io/gorm/logger
+	pkgLogger "microservice-mvp/pkg/logger" // 別名以避免與 gorm.io/gorm/logger 衝突
 	"go.uber.org/zap"
 )
 
-// DB is the global GORM DB client
+// DB 是全域 GORM DB 客戶端
 var DB *gorm.DB
 
-// InitTiDB initializes the TiDB connection using GORM.
+// InitTiDB 使用 GORM 初始化 TiDB 連線
 func InitTiDB(cfg configs.DatabaseConfig) (*gorm.DB, error) {
 	newLogger := logger.New(
-		&logWriter{}, // Custom log writer to integrate with Zap
+		&logWriter{}, // 自定義日誌寫入器以整合 Zap
 		logger.Config{
-			SlowThreshold: time.Second, // Slow SQL threshold
-			LogLevel:      logger.Warn, // Log level
-			Colorful:      false,       // Disable color
+			SlowThreshold: time.Second, // 慢查詢閾值
+			LogLevel:      logger.Warn, // 日誌級別
+			Colorful:      false,       // 禁用顏色
 		},
 	)
 
@@ -32,35 +32,35 @@ func InitTiDB(cfg configs.DatabaseConfig) (*gorm.DB, error) {
 		Logger: newLogger,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to TiDB: %w", err)
+		return nil, fmt.Errorf("連線到 TiDB 失敗: %w", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+		return nil, fmt.Errorf("獲取底層 sql.DB 失敗: %w", err)
 	}
 
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetimeMinutes) * time.Minute)
 
-	DB = db // Set global DB instance
-	pkgLogger.Logger.Info("TiDB connection initialized successfully")
+	DB = db // 設定全域 DB 實例
+	pkgLogger.Logger.Info("TiDB 連線初始化成功")
 	return db, nil
 }
 
-// GetDB returns the global GORM DB client.
+// GetDB 回傳全域 GORM DB 客戶端
 func GetDB() *gorm.DB {
 	return DB
 }
 
-// WithContext passes the logger from the context to GORM's session.
-// This allows GORM logs to include the traceID.
+// WithContext 將上下文中的日誌器傳遞給 GORM 的 session
+// 這允許 GORM 日誌包含 traceID
 func WithContext(ctx context.Context) *gorm.DB {
 	if ctx == nil {
 		return DB
 	}
-	// Retrieve logger from context, which should contain traceID
+	// 從上下文中獲取 logger (應包含 traceID)
 	zapLogger := pkgLogger.FromContext(ctx)
 	return DB.WithContext(ctx).Session(&gorm.Session{
 		Logger: logger.New(
@@ -74,19 +74,19 @@ func WithContext(ctx context.Context) *gorm.DB {
 	})
 }
 
-// logWriter is a custom writer to integrate GORM logs with Zap.
+// logWriter 是自定義寫入器，用於將 GORM 日誌整合到 Zap
 type logWriter struct {
 	zapLogger *zap.Logger
 }
 
 func (l *logWriter) Printf(format string, v ...interface{}) {
 	if l.zapLogger == nil {
-		l.zapLogger = pkgLogger.Logger // Fallback to global logger if context logger is not set
+		l.zapLogger = pkgLogger.Logger // 如果上下文 logger 未設定，則回退到全域 logger
 	}
-	// GORM's Printf often includes the log level in the format itself.
-	// We'll parse it or just log it at a default level.
-	// For simplicity, we'll log most GORM messages at Debug level,
-	// and rely on GORM's LogLevel config to filter.
-	// Slow queries will already be logged by GORM at Warn level.
+	// GORM 的 Printf 通常在格式字串中包含日誌級別
+	// 我們將其解析或僅以預設級別記錄
+	// 為簡單起見，我們在 Debug 級別記錄大多數 GORM 訊息，
+	// 並依賴 GORM 的 LogLevel 配置進行過濾
+	// 慢查詢已由 GORM 在 Warn 級別記錄
 	l.zapLogger.Debug(fmt.Sprintf(format, v...))
 }

@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "This is a lightweight Microservice Template suitable for quick start. It supports both In-Memory and MySQL modes.",
-        "title": "Microservice MVP API (Template)",
+        "description": "這是一個輕量級的微服務範本，適合快速啟動專案。它支援 In-Memory 和 MySQL 兩種模式。",
+        "title": "Microservice MVP API (範本)",
         "contact": {
             "name": "API Support"
         },
@@ -16,7 +16,7 @@
     "paths": {
         "/api/v1/login": {
             "post": {
-                "description": "驗證玩家憑證並返回認證 token",
+                "description": "驗證玩家憑證並返回認證 Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -29,7 +29,7 @@
                 "summary": "玩家登入",
                 "parameters": [
                     {
-                        "description": "登入請求",
+                        "description": "登入請求參數",
                         "name": "loginRequest",
                         "in": "body",
                         "required": true,
@@ -74,7 +74,7 @@
         },
         "/api/v1/players/{id}": {
             "get": {
-                "description": "根據玩家 ID 取得玩家的詳細資料，包含餘額。",
+                "description": "根據玩家 ID 取得玩家的詳細資料，包含餘額",
                 "produces": [
                     "application/json"
                 ],
@@ -163,7 +163,7 @@
             "type": "object",
             "properties": {
                 "details": {
-                    "description": "Extra info (e.g., item count, db stats)",
+                    "description": "額外資訊 (例如: 項目數量, DB 統計)",
                     "type": "string"
                 },
                 "latency": {
@@ -237,7 +237,7 @@
             "type": "object",
             "properties": {
                 "token": {
-                    "description": "Placeholder for JWT token",
+                    "description": "JWT Token 的佔位符",
                     "type": "string"
                 }
             }
@@ -268,7 +268,7 @@
                 },
                 "message": {
                     "type": "string",
-                    "example": "Bad Request"
+                    "example": "請求參數錯誤"
                 }
             }
         },
@@ -281,7 +281,7 @@
                 },
                 "message": {
                     "type": "string",
-                    "example": "Unauthorized"
+                    "example": "未經授權"
                 }
             }
         },
@@ -294,7 +294,7 @@
                 },
                 "message": {
                     "type": "string",
-                    "example": "Not Found"
+                    "example": "找不到資源"
                 }
             }
         },
@@ -307,7 +307,7 @@
                 },
                 "message": {
                     "type": "string",
-                    "example": "Internal Server Error"
+                    "example": "內部伺服器錯誤"
                 }
             }
         },

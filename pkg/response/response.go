@@ -6,14 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Response represents the unified API response structure.
+// Response 代表統一的 API 回應結構
 type Response struct {
 	Code    int         `json:"code" example:"200"`
 	Message string      `json:"message" example:"success"`
 	Data    interface{} `json:"data,omitempty"`
 }
 
-// OK responds with a success message and optional data.
+// OK 回應成功訊息和可選資料
 func OK(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, Response{
 		Code:    http.StatusOK,
@@ -22,7 +22,7 @@ func OK(c *gin.Context, data interface{}) {
 	})
 }
 
-// Fail responds with an error message and status code.
+// Fail 回應錯誤訊息和狀態碼
 func Fail(c *gin.Context, httpCode int, err error) {
 	c.JSON(httpCode, Response{
 		Code:    httpCode,
@@ -30,7 +30,7 @@ func Fail(c *gin.Context, httpCode int, err error) {
 	})
 }
 
-// FailWithMessage responds with a custom error message and status code.
+// FailWithMessage 回應自定義錯誤訊息和狀態碼
 func FailWithMessage(c *gin.Context, httpCode int, message string) {
 	c.JSON(httpCode, Response{
 		Code:    httpCode,
@@ -38,7 +38,7 @@ func FailWithMessage(c *gin.Context, httpCode int, message string) {
 	})
 }
 
-// NewError creates a new error response.
+// NewError 建立一個新的錯誤回應
 func NewError(code int, message string) *Response {
 	return &Response{
 		Code:    code,
@@ -46,28 +46,28 @@ func NewError(code int, message string) *Response {
 	}
 }
 
-// --- Swagger Documentation Helpers ---
+// --- Swagger 文件輔助結構 ---
 
-// HTTPError400 represents a 400 Bad Request response for Swagger.
+// HTTPError400 代表 Swagger 的 400 Bad Request 回應
 type HTTPError400 struct {
 	Code    int    `json:"code" example:"400"`
-	Message string `json:"message" example:"Bad Request"`
+	Message string `json:"message" example:"請求參數錯誤"`
 }
 
-// HTTPError401 represents a 401 Unauthorized response for Swagger.
+// HTTPError401 代表 Swagger 的 401 Unauthorized 回應
 type HTTPError401 struct {
 	Code    int    `json:"code" example:"401"`
-	Message string `json:"message" example:"Unauthorized"`
+	Message string `json:"message" example:"未經授權"`
 }
 
-// HTTPError404 represents a 404 Not Found response for Swagger.
+// HTTPError404 代表 Swagger 的 404 Not Found 回應
 type HTTPError404 struct {
 	Code    int    `json:"code" example:"404"`
-	Message string `json:"message" example:"Not Found"`
+	Message string `json:"message" example:"找不到資源"`
 }
 
-// HTTPError500 represents a 500 Internal Server Error response for Swagger.
+// HTTPError500 代表 Swagger 的 500 Internal Server Error 回應
 type HTTPError500 struct {
 	Code    int    `json:"code" example:"500"`
-	Message string `json:"message" example:"Internal Server Error"`
+	Message string `json:"message" example:"內部伺服器錯誤"`
 }

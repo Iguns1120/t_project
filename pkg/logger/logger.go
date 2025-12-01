@@ -8,22 +8,22 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Logger is the global logger instance
+// Logger 是全域 logger 實例
 var Logger *zap.Logger
 
 type loggerKey struct{}
 
-// NewLogger initializes a new Zap logger based on the provided log level and encoding.
+// NewLogger 根據提供的日誌級別和編碼初始化新的 Zap logger
 func NewLogger(level, encoding string) (*zap.Logger, error) {
 	var zapLevel zapcore.Level
 	if err := zapLevel.UnmarshalText([]byte(level)); err != nil {
-		zapLevel = zapcore.InfoLevel // Default to Info if parsing fails
+		zapLevel = zapcore.InfoLevel // 如果解析失敗，預設為 Info
 	}
 
 	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder // Use ISO8601 for time formatting
-	encoderConfig.CallerKey = "caller"                   // Add caller info
-	encoderConfig.TimeKey = "time"                       // Add time key
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder // 使用 ISO8601 格式化時間
+	encoderConfig.CallerKey = "caller"                   // 添加呼叫者資訊
+	encoderConfig.TimeKey = "time"                       // 添加時間鍵
 
 	var encoder zapcore.Encoder
 	switch encoding {
@@ -32,12 +32,12 @@ func NewLogger(level, encoding string) (*zap.Logger, error) {
 	case "console":
 		encoder = zapcore.NewConsoleEncoder(encoderConfig)
 	default:
-		encoder = zapcore.NewJSONEncoder(encoderConfig) // Default to JSON
+		encoder = zapcore.NewJSONEncoder(encoderConfig) // 預設為 JSON
 	}
 
 	core := zapcore.NewCore(
 		encoder,
-		zapcore.AddSync(os.Stdout), // Write to stdout
+		zapcore.AddSync(os.Stdout), // 寫入到標準輸出
 		zapLevel,
 	)
 
@@ -45,7 +45,7 @@ func NewLogger(level, encoding string) (*zap.Logger, error) {
 	return Logger, nil
 }
 
-// FromContext returns a logger with fields from the context, or the global logger if none is found.
+// FromContext 從上下文中返回帶有欄位的 logger，如果未找到則返回全域 logger
 func FromContext(ctx context.Context) *zap.Logger {
 	if ctx == nil {
 		return Logger
@@ -56,15 +56,15 @@ func FromContext(ctx context.Context) *zap.Logger {
 	return Logger
 }
 
-// WithContext returns a new context with the provided logger.
+// WithContext 返回一個帶有提供的 logger 的新上下文
 func WithContext(ctx context.Context, logger *zap.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey{}, logger)
 }
 
-// TraceIDKey is the key used to store and retrieve trace ID in context and log fields.
+// TraceIDKey 是用於在上下文和日誌欄位中存儲和檢索 trace ID 的鍵
 const TraceIDKey = "traceID"
 
-// WithTraceID adds a traceID field to the logger and returns a new context with this logger.
+// WithTraceID 將 traceID 欄位添加到 logger 並返回帶有此 logger 的新上下文
 func WithTraceID(ctx context.Context, traceID string) context.Context {
 	if traceID == "" {
 		return ctx

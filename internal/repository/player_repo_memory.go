@@ -9,14 +9,14 @@ import (
 	"microservice-mvp/internal/model"
 )
 
-// playerRepositoryMemory implements PlayerRepository using in-memory map.
+// playerRepositoryMemory 使用記憶體中的 map 實作 PlayerRepository
 type playerRepositoryMemory struct {
 	mu      sync.RWMutex
 	players map[uint]*model.Player
 	nextID  uint
 }
 
-// NewPlayerRepositoryMemory creates a new playerRepositoryMemory.
+// NewPlayerRepositoryMemory 建立一個新的 playerRepositoryMemory
 func NewPlayerRepositoryMemory() PlayerRepository {
 	return &playerRepositoryMemory{
 		players: make(map[uint]*model.Player),
@@ -24,15 +24,15 @@ func NewPlayerRepositoryMemory() PlayerRepository {
 	}
 }
 
-// CreatePlayer creates a new player in memory.
+// CreatePlayer 在記憶體中建立一個新玩家
 func (r *playerRepositoryMemory) CreatePlayer(ctx context.Context, player *model.Player) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// Check for unique username
+	// 檢查使用者名稱是否唯一
 	for _, p := range r.players {
 		if p.Username == player.Username {
-			return fmt.Errorf("username already exists") // Simple simulation of unique constraint
+			return fmt.Errorf("使用者名稱已存在") // 簡單模擬唯一性約束
 		}
 	}
 
@@ -41,14 +41,14 @@ func (r *playerRepositoryMemory) CreatePlayer(ctx context.Context, player *model
 	player.CreatedAt = time.Now()
 	player.UpdatedAt = time.Now()
 
-	// Store a copy
+	// 儲存副本
 	p := *player
 	r.players[player.ID] = &p
 	
 	return nil
 }
 
-// GetPlayerByUsername retrieves a player by username from memory.
+// GetPlayerByUsername 從記憶體中根據使用者名稱檢索玩家
 func (r *playerRepositoryMemory) GetPlayerByUsername(ctx context.Context, username string) (*model.Player, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -59,10 +59,10 @@ func (r *playerRepositoryMemory) GetPlayerByUsername(ctx context.Context, userna
 			return &copy, nil
 		}
 	}
-	return nil, nil // Not found
+	return nil, nil // 找不到
 }
 
-// GetPlayerByID retrieves a player by ID from memory.
+// GetPlayerByID 從記憶體中根據 ID 檢索玩家
 func (r *playerRepositoryMemory) GetPlayerByID(ctx context.Context, id uint) (*model.Player, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -71,5 +71,5 @@ func (r *playerRepositoryMemory) GetPlayerByID(ctx context.Context, id uint) (*m
 		copy := *p
 		return &copy, nil
 	}
-	return nil, nil // Not found
+	return nil, nil // 找不到
 }

@@ -12,19 +12,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// PlayerController handles player-related requests.
+// PlayerController 處理玩家相關請求
 type PlayerController struct {
 	playerService service.PlayerService
 }
 
-// NewPlayerController creates a new PlayerController.
+// NewPlayerController 建立一個新的 PlayerController
 func NewPlayerController(playerService service.PlayerService) *PlayerController {
 	return &PlayerController{playerService: playerService}
 }
 
-// GetPlayerInfo handles requests to get player information by ID.
+// GetPlayerInfo 處理取得玩家資訊的請求
 // @Summary 取得玩家資料
-// @Description 根據玩家 ID 取得玩家的詳細資料，包含餘額。
+// @Description 根據玩家 ID 取得玩家的詳細資料，包含餘額
 // @Tags Player
 // @Produce json
 // @Param id path int true "玩家 ID"
@@ -39,19 +39,19 @@ func (ctrl *PlayerController) GetPlayerInfo(c *gin.Context) {
 	playerIDStr := c.Param("id")
 	playerID, err := strconv.ParseUint(playerIDStr, 10, 32)
 	if err != nil {
-		log.Warn("Invalid player ID format", zap.Error(err), zap.String("playerIDStr", playerIDStr))
-		response.FailWithMessage(c, http.StatusBadRequest, "Invalid player ID format")
+		log.Warn("無效的玩家 ID 格式", zap.Error(err), zap.String("playerIDStr", playerIDStr))
+		response.FailWithMessage(c, http.StatusBadRequest, "無效的玩家 ID 格式")
 		return
 	}
 
 	var resp *model.PlayerInfoResponse
 	resp, err = ctrl.playerService.GetPlayerInfo(c.Request.Context(), uint(playerID))
 	if err != nil {
-		log.Error("Player service get player info failed", zap.Error(err), zap.Uint("playerID", uint(playerID)))
-		if err.Error() == "player not found" {
+		log.Error("玩家服務取得資訊失敗", zap.Error(err), zap.Uint("playerID", uint(playerID)))
+		if err.Error() == "玩家不存在" { // 注意: 這裡依賴 Error string，如果 service 層錯誤訊息也翻譯了，這裡要對應修改
 			response.FailWithMessage(c, http.StatusNotFound, err.Error())
 		} else {
-			response.FailWithMessage(c, http.StatusInternalServerError, "Failed to retrieve player information")
+			response.FailWithMessage(c, http.StatusInternalServerError, "取得玩家資訊失敗")
 		}
 		return
 	}
